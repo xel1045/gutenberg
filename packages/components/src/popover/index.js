@@ -10,6 +10,7 @@ import { Component, createRef } from '@wordpress/element';
 import { focus } from '@wordpress/dom';
 import { ESCAPE } from '@wordpress/keycodes';
 import isShallowEqual from '@wordpress/is-shallow-equal';
+import deprecated from '@wordpress/deprecated';
 
 /**
  * Internal dependencies
@@ -40,6 +41,7 @@ class Popover extends Component {
 		this.getAnchorRect = this.getAnchorRect.bind( this );
 		this.computePopoverPosition = this.computePopoverPosition.bind( this );
 		this.maybeClose = this.maybeClose.bind( this );
+		this.onFocusOutside = this.onFocusOutside.bind( this );
 		this.throttledRefresh = this.throttledRefresh.bind( this );
 		this.refresh = this.refresh.bind( this );
 		this.refreshOnAnchorMove = this.refreshOnAnchorMove.bind( this );
@@ -92,6 +94,47 @@ class Popover extends Component {
 	componentWillUnmount() {
 		clearTimeout( this.focusTimeout );
 		this.toggleAutoRefresh( false );
+	}
+
+	/**
+	 * Shims an onFocusOutside callback to be compatible with a deprecated
+	 * onClickOutside prop function, if provided.
+	 *
+	 * @param {FocusEvent} event Focus event from onFocusOutside.
+	 */
+	onFocusOutside( event ) {
+		const { onClickOutside, onFocusOutside, onClose } = this.props;
+
+		// Defer to given `onFocusOutside` if specified. Call `onClose` only if
+		// both `onFocusOutside` and `onClickOutside` are unspecified. Doing so
+		// assures backwards-compatibility for prior `onClickOutside` default.
+		if ( onFocusOutside ) {
+			onFocusOutside( event );
+			return;
+		} else if ( ! onClickOutside ) {
+			onClose();
+			return;
+		}
+
+		// Simulate MouseEvent using FocusEvent#relatedTarget as emulated click
+		// target. MouseEvent constructor is unsupported in Internet Explorer.
+		let clickEvent;
+		try {
+			clickEvent = new window.MouseEvent( 'click' );
+		} catch ( error ) {
+			clickEvent = document.createEvent( 'MouseEvent' );
+			clickEvent.initMouseEvent( 'click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null );
+		}
+
+		Object.defineProperty( clickEvent, 'target', {
+			get: () => event.relatedTarget,
+		} );
+
+		deprecated( 'Popover onClickOutside prop', {
+			alternative: 'onFocusOutside',
+		} );
+
+		onClickOutside( clickEvent );
 	}
 
 	toggleAutoRefresh( isActive ) {
@@ -254,7 +297,6 @@ class Popover extends Component {
 			onClose,
 			children,
 			className,
-			onClickOutside = onClose,
 			noArrow,
 			// Disable reason: We generate the `...contentProps` rest as remainder
 			// of props which aren't explicitly handled by this component.
@@ -265,6 +307,8 @@ class Popover extends Component {
 			getAnchorRect,
 			expandOnMobile,
 			animate = true,
+			onClickOutside,
+			onFocusOutside,
 			/* eslint-enable no-unused-vars */
 			...contentProps
 		} = this.props;
@@ -308,7 +352,7 @@ class Popover extends Component {
 
 		/* eslint-disable jsx-a11y/no-static-element-interactions */
 		let content = (
-			<PopoverDetectOutside onClickOutside={ onClickOutside }>
+			<PopoverDetectOutside onFocusOutside={ this.onFocusOutside }>
 				<Animate
 					type={ animate && isReadyToAnimate ? 'appear' : null }
 					options={ { origin: animateYAxis + ' ' + animateXAxis } }
