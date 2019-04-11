@@ -128,8 +128,8 @@ class GalleryImage extends Component {
 		/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/onclick-has-role, jsx-a11y/click-events-have-key-events */
 		return (
 			<figure className={ className } tabIndex="-1" onKeyDown={ this.onKeyDown } ref={ this.bindContainer }>
-				{ process.env.GUTENBERG_PHASE === 2 ?
-					isSelected && <div className="block-library-gallery-item__move-menu">
+				{ isSelected &&
+					<div className="block-library-gallery-item__move-menu">
 						<IconButton
 							icon="arrow-left"
 							onClick={ onMoveBackward }
@@ -144,8 +144,7 @@ class GalleryImage extends Component {
 							label={ __( 'Move Image Forward' ) }
 							aria-disabled={ isLastItem }
 						/>
-					</div> :
-					null
+					</div>
 				}
 				{ isSelected &&
 					<div className="block-library-gallery-item__inline-menu">
