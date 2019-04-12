@@ -9,6 +9,7 @@ import classnames from 'classnames';
 import { Path, SVG } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { InnerBlocks, getColorClassName } from '@wordpress/block-editor';
+import { createBlock } from '@wordpress/blocks';
 
 /**
  * Internal dependencies
@@ -33,6 +34,26 @@ export const settings = {
 		align: [ 'wide', 'full' ],
 		anchor: true,
 		html: false,
+	},
+
+	transforms: {
+		from: [
+			{
+				type: 'block',
+				isMultiBlock: true,
+				blocks: [ 'core/paragraph' ],
+				transform: ( attributes ) => {
+					const innerBlocks = attributes.map( ( blockAttrs ) => {
+						return createBlock( 'core/paragraph', blockAttrs );
+					} );
+
+					return createBlock( 'core/group', {
+						backgroundColor: 'lighter-blue', // TODO: remove this once https://github.com/WordPress/gutenberg/pull/14241 is activated on `core/group`
+					}, innerBlocks );
+				},
+			},
+
+		],
 	},
 
 	edit,
