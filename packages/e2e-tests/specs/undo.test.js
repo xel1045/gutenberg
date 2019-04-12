@@ -75,15 +75,14 @@ describe( 'undo', () => {
 
 		// Issue is demonstrated from an edited post: create, save, and reload.
 		await clickBlockAppender();
-		await page.keyboard.type( 'Hello' );
+		await page.keyboard.type( 'before' );
 		await pressKeyWithModifier( 'primary', 's' );
 		await page.reload();
 
 		// Issue is demonstrated by forcing state merges (multiple inputs) on
 		// an existing text after a fresh reload.
 		await selectBlockByClientId( ( await getAllBlocks() )[ 0 ].clientId );
-		await page.keyboard.press( 'End' );
-		await page.keyboard.type( ' World' );
+		await page.keyboard.type( 'after' );
 
 		// The issue is demonstrated after the one second delay to trigger the
 		// creation of an explicit undo persistence level.
@@ -96,6 +95,6 @@ describe( 'undo', () => {
 		// content. The issue had manifested in the form of what was shown to
 		// the user since the blocks state failed to sync to block editor.
 		const visibleContent = await page.evaluate( () => document.activeElement.textContent );
-		expect( visibleContent ).toBe( 'Hello' );
+		expect( visibleContent ).toBe( 'before' );
 	} );
 } );
